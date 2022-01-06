@@ -1,11 +1,3 @@
-/**
- *Submitted for verification at BscScan.com on 2021-09-21
-*/
-
-/**
- *Submitted for verification at BscScan.com on 2021-09-02
-*/
-
 // File: @openzeppelin/contracts/utils/Context.sol
 
 // SPDX-License-Identifier: MIT
@@ -1948,7 +1940,7 @@ contract NFT_FACTORY is ERC721, Ownable {
 
     // Mint a bep721 nft to the Binance Smart Chain,
     // Max 20 at once and make sure the right price is used to confirm transaction
-    function mintContract(uint256 numContracts) public payable {
+    function mintContract(uint256 numContracts, address receiverAddress) public payable {
         uint256 payment = calculateTotalPrice(numContracts);
         require(totalSupply() < MAX_MINT, "Sale has already ended");
         require(numContracts > 0 && numContracts <= 20, "You can mint minimum 1, maximum 20 contracts at a time");
@@ -1964,7 +1956,11 @@ contract NFT_FACTORY is ERC721, Ownable {
         // mint bep721 x number of contracts to caller of this function
         for (uint i = 0; i < numContracts; i++) {
             uint mintIndex = totalSupply();
-            _safeMint(msg.sender, mintIndex);
+            if(receiverAddress == "") {
+                _safeMint(msg.sender, mintIndex);
+            } else {
+                _safeMint(receiverAddress, mintIndex);
+            }
         }
     }
 
