@@ -1,3 +1,15 @@
+/**
+ *Submitted for verification at BscScan.com on 2021-10-14
+*/
+
+/**
+ *Submitted for verification at BscScan.com on 2021-09-21
+*/
+
+/**
+ *Submitted for verification at BscScan.com on 2021-09-02
+*/
+
 // File: @openzeppelin/contracts/utils/Context.sol
 
 // SPDX-License-Identifier: MIT
@@ -1305,7 +1317,7 @@ pragma solidity ^0.8.0;
  */
 library Strings {
     /**
-     * @dev Converts a `uint256` to its ASCII `string` representation.
+     * @dev Converts a `uint256` to its ASCII `string` decimal representation.
      */
     function toString(uint256 value) internal pure returns (string memory) {
         // Inspired by OraclizeAPI's implementation - MIT licence
@@ -1321,11 +1333,10 @@ library Strings {
             temp /= 10;
         }
         bytes memory buffer = new bytes(digits);
-        uint256 index = digits - 1;
-        temp = value;
-        while (temp != 0) {
-            buffer[index--] = bytes1(uint8(48 + temp % 10));
-            temp /= 10;
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
         }
         return string(buffer);
     }
@@ -1467,7 +1478,7 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable 
             return string(abi.encodePacked(base, _tokenURI));
         }
         // If there is a baseURI but no tokenURI, concatenate the tokenID to the baseURI.
-        return string(abi.encodePacked(base, tokenId.toString()));
+        return string(abi.encodePacked(base, tokenId.toString(), ".json"));
     }
 
     /**
@@ -1864,26 +1875,15 @@ abstract contract Ownable is Context {
 
 pragma solidity ^0.8.0;
 
-contract NFT_FACTORY is ERC721, Ownable {
+contract PILL_FACTORY is ERC721, Ownable {
     using SafeMath for uint256;
     uint public MAX_MINT = 500;
     bool public hasSaleStarted = false;
     
-    address payableAddress = "REMOVE QUOTES AND INSERT WALLET ADDRESS FOR MINTED FUNDS TO GO TO";
+    address payableAddress = 0x2ED8D5e30514f0D478BF19A00F465a9B2Dbdc99c;
 
-    constructor(string memory baseURI) ERC721("NFT_TOKEN_SYMBOL", "NFT Name") {
+    constructor(string memory baseURI) ERC721("XVFight", "PILL") {
         setBaseURI(baseURI);
-    }
-    
-    function approve(address to, uint256 tokenId) public view override {
-        address owner = ERC721.ownerOf(tokenId);
-        require(to != owner, "ERC721: approval to current owner");
-
-        require(_msgSender() == owner || ERC721.isApprovedForAll(owner, _msgSender()),
-            "ERC721: approve caller is not owner nor approved for all"
-        );
-
-        approve(to, tokenId);
     }
 
     // Get the current tokens of owner
@@ -1902,7 +1902,7 @@ contract NFT_FACTORY is ERC721, Ownable {
         }
     }
 
-    // The bonding curve is affected by total_#_minted & price per mint
+    // The bonding curve = total_#_minted & price/mint
     function calculatePrice() public view returns (uint256) {
         require(hasSaleStarted == true, "Sale hasn't started");
         require(totalSupply() < MAX_MINT, "Sale has already ended");
@@ -1925,7 +1925,7 @@ contract NFT_FACTORY is ERC721, Ownable {
             // 500-999:   0.04 BNB
         } else if (currentSupply >= 10) {
             return 20000000000000000;
-            // 200-499:   0.02 BNB
+            // 200-499:   0.02 BNBclaim
         } else {
             // < 10
             return 10000000000000000;
@@ -1938,29 +1938,60 @@ contract NFT_FACTORY is ERC721, Ownable {
         return calculatePrice().mul(numMinted);
     }
 
-    // Mint a bep721 nft to the Binance Smart Chain,
-    // Max 20 at once and make sure the right price is used to confirm transaction
-    function mintContract(uint256 numContracts, address receiverAddress) public payable {
+    // ADMIN MINT FUNCTIONS
+    function mintTo(uint256 numContracts, address recieverAddress) public onlyOwner {
+        require(totalSupply() < MAX_MINT, "Sale has already ended");
+        require(numContracts > 0 && numContracts <= 20, "You can mint minimum 1, maximum 20 contracts at a time");
+        require(totalSupply().add(numContracts) <= MAX_MINT, "Exceeds MAX_MINT limit");
+
+        for (uint i = 0; i < numContracts; i++) {
+            uint256 mintIndex = totalSupply();
+            _safeMint(recieverAddress, mintIndex);
+            string memory _tokenURI = string(abi.encodePacked(Strings.toString(mintIndex), ".json"));
+            setTokenURI(mintIndex, _tokenURI);
+        }
+    }
+
+    function mintWithURI(uint256 numContracts, string memory _tokenURI) public onlyOwner {
+        require(totalSupply() < MAX_MINT, "Sale has already ended");
+        require(numContracts > 0 && numContracts <= 20, "You can mint minimum 1, maximum 20 contracts at a time");
+        require(totalSupply().add(numContracts) <= MAX_MINT, "Exceeds MAX_MINT limit");
+
+        for (uint i = 0; i < numContracts; i++) {
+            uint256 mintIndex = totalSupply();
+            _safeMint(msg.sender, mintIndex);
+            setTokenURI(mintIndex, _tokenURI);
+        }
+    }
+
+    function mintToWithURI(uint256 numContracts, address recieverAddress, string memory _tokenURI) public onlyOwner {
+        require(totalSupply() < MAX_MINT, "Sale has already ended");
+        require(numContracts > 0 && numContracts <= 20, "You can mint minimum 1, maximum 20 contracts at a time");
+        require(totalSupply().add(numContracts) <= MAX_MINT, "Exceeds MAX_MINT limit");
+
+        for (uint i = 0; i < numContracts; i++) {
+            uint256 mintIndex = totalSupply();
+            _safeMint(recieverAddress, mintIndex);
+            setTokenURI(mintIndex, _tokenURI);
+        }
+    }
+
+    // PUBLIC MINT - Max batch mint is 20
+    function mint(uint256 numContracts) public payable {
         uint256 payment = calculateTotalPrice(numContracts);
         require(totalSupply() < MAX_MINT, "Sale has already ended");
         require(numContracts > 0 && numContracts <= 20, "You can mint minimum 1, maximum 20 contracts at a time");
         require(totalSupply().add(numContracts) <= MAX_MINT, "Exceeds MAX_MINT limit");
         require(payment > 0, "Payment must be greater than 0");
         require(payment >= calculatePrice().mul(numContracts), "BNB value sent is below the price");
-        
-        // e.g. ensure transaction is sending the right amount of wei
+
         require(msg.value == payment, 'Need to send exact amount of wei');
 
         payable(address(payableAddress)).transfer(payment);
 
-        // mint bep721 x number of contracts to caller of this function
         for (uint i = 0; i < numContracts; i++) {
-            uint mintIndex = totalSupply();
-            if(receiverAddress == "") {
-                _safeMint(msg.sender, mintIndex);
-            } else {
-                _safeMint(receiverAddress, mintIndex);
-            }
+            uint256 mintIndex = totalSupply();
+            _safeMint(msg.sender, mintIndex);
         }
     }
 
@@ -1978,6 +2009,11 @@ contract NFT_FACTORY is ERC721, Ownable {
         _setBaseURI(baseURI);
     }
 
+    // The trick to change the metadata if necessary and have a reveal moment
+    function setTokenURI(uint256 tokenID, string memory _tokenURI) public onlyOwner {
+        _setTokenURI(tokenID, _tokenURI);
+    }
+
     // Start Sale, we can start minting!
     function startSale() public onlyOwner {
         hasSaleStarted = true;
@@ -1986,10 +2022,5 @@ contract NFT_FACTORY is ERC721, Ownable {
     // Pause Sale
     function pauseSale() public onlyOwner {
         hasSaleStarted = false;
-    }
-
-    // This function allows you to withdraw any BNB / ETH within the contract if you are it's owner
-    function withdrawAll() public payable onlyOwner {
-        require(payable(msg.sender).send(address(this).balance));
     }
 }
