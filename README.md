@@ -10,7 +10,7 @@ Smart contract template for a BEP721 NFT minter. Written in solidity. Deployable
 
   <li>Connect your metamask wallet and select the chain you want to deploy to.
   <br />
-  - This contract supports blockchain networks IDs: ETH [1, 3, 4, 42] and Binance [97, 56]
+  - This contract supports blockchain network IDs: ETH [1, 3, 4, 42] and Binance [97, 56]
   </li>
 
   <li>Select "Deploy and Run Transaction" on Remix</li>
